@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNUAILAB 프로젝트 관리 대시보드</title>
-    <link rel="icon" type="image/png" href="icon.png">
+    <title>SNUAILAB 통합 프로젝트 일정 관리</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
     
@@ -43,19 +43,13 @@
 
         /* 사이드바 */
         .sidebar { width: 340px; background-color: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); display: flex; flex-direction: column; z-index: 10; color: var(--sidebar-text); }
-        
         .sidebar-header { padding: 30px 24px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--sidebar-border); }
         .sidebar-header img { max-width: 80%; height: 36px; object-fit: contain; }
         
-        /* [개선됨] 상태 요약 클릭(필터) 기능 스타일 */
         .status-summary { display: flex; justify-content: space-around; background-color: rgba(0,0,0,0.15); padding: 12px; border-bottom: 1px solid var(--sidebar-border); }
-        .status-item { 
-            display: flex; flex-direction: column; align-items: center; gap: 6px; 
-            padding: 8px 16px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;
-        }
+        .status-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
         .status-item:hover { background-color: rgba(255,255,255,0.05); }
         .status-item.active { background-color: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        
         .status-label { font-size: 0.8rem; font-weight: 500; color: var(--sidebar-text-muted); }
         .status-count { font-size: 1.3rem; color: #fff; font-weight: 700; letter-spacing: -0.5px; }
 
@@ -103,51 +97,66 @@
         .weekdays div:first-child { color: var(--holiday-color); }
         .weekdays div:last-child { color: var(--saturday-color); }
 
-        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(110px, 1fr); border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); flex: 1; border-radius: 8px 8px 0 0; }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(120px, 1fr); border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); flex: 1; border-radius: 8px 8px 0 0; }
         
-        .day-cell { background-color: var(--surface); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 10px; display: flex; flex-direction: column; cursor: pointer; transition: background-color 0.1s; }
+        .day-cell { background-color: var(--surface); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 8px; display: flex; flex-direction: column; cursor: pointer; transition: background-color 0.1s; overflow-y: auto;}
         .day-cell:hover { background-color: #f8fafd; }
         .day-cell.other-month { background-color: #f8f9fa; color: #bdbdbd; pointer-events: none; }
         
-        .day-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; pointer-events: none; }
+        .day-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 6px; pointer-events: none; }
         .day-number { font-size: 0.9rem; font-weight: 500; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-primary); }
-        .holiday-text { font-size: 0.7rem; color: var(--holiday-color); margin-top: 3px; font-weight: 500; }
+        .holiday-text { font-size: 0.7rem; color: var(--holiday-color); margin-top: 2px; font-weight: 500; }
         
         .day-cell.today .day-number { background-color: var(--primary); color: white !important; font-weight: 700; }
         .day-cell.sunday .day-number { color: var(--holiday-color); }
         .day-cell.saturday .day-number { color: var(--saturday-color); }
         .day-cell.holiday .day-number { color: var(--holiday-color); }
 
-        .project-bar { height: 26px; border-radius: 4px; margin-bottom: 5px; cursor: pointer; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 0.75rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid rgba(0,0,0,0.08); transition: filter 0.2s; }
-        .project-bar:hover { filter: brightness(0.9); }
+        /* [개선] 캘린더 세부 일정 바 스타일 */
+        .project-bar { 
+            min-height: 24px; border-radius: 4px; margin-bottom: 4px; cursor: pointer; 
+            display: flex; align-items: center; padding: 2px 8px; color: white; 
+            font-size: 0.75rem; font-weight: 500; line-height: 1.2;
+            border: 1px solid rgba(0,0,0,0.08); transition: filter 0.2s; 
+            word-break: break-all;
+        }
+        .project-bar:hover { filter: brightness(0.85); box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; transform: scale(1.02);}
 
         /* 모달 팝업 */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(10,15,30,0.6); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 100; }
         .modal-overlay.active { display: flex; }
-        .modal-content { background-color: var(--surface); border-radius: 12px; width: 500px; max-width: 95%; box-shadow: var(--shadow-modal); display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* [개선] 여러 일정을 담을 수 있도록 모달 크기 확대 */
+        .modal-content { background-color: var(--surface); border-radius: 12px; width: 650px; max-width: 95%; box-shadow: var(--shadow-modal); display: flex; flex-direction: column; overflow: hidden; }
         .modal-header { padding: 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: #f8fafd; }
         .modal-header h2 { margin: 0; font-size: 1.25rem; font-weight: 500; color: var(--text-primary); }
-        .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; max-height: 70vh; overflow-y: auto; }
+        .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; max-height: 75vh; overflow-y: auto; }
         .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background-color: #fafafa; }
 
         .input-group { display: flex; flex-direction: column; gap: 8px; }
-        .input-group label { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); }
+        .input-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
         
-        .input-group input[type="text"], .input-group textarea { padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-family: 'Roboto', sans-serif; font-size: 1rem; transition: border-color 0.2s; background-color: #fff; }
-        .input-group input:focus, .input-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
-        .input-group textarea { resize: vertical; min-height: 80px; }
-        
-        .dday-display { font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-top: -5px; padding-left: 4px; }
+        .input-group input[type="text"], .input-group textarea, .input-group select { 
+            padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; 
+            font-family: 'Roboto', sans-serif; font-size: 0.95rem; background-color: #fff; 
+        }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+        .input-group textarea { resize: vertical; min-height: 60px; }
+
+        /* [추가] 동적 마일스톤(세부일정) 행 디자인 */
+        .milestone-row { display: flex; gap: 8px; align-items: center; background-color: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        .ms-dept { width: 110px; flex-shrink: 0; }
+        .ms-title { flex: 1; }
+        .ms-date-wrapper { position: relative; width: 200px; flex-shrink: 0; }
+        .ms-date { width: 100%; padding-left: 32px !important; box-sizing: border-box; cursor: pointer; }
+        .ms-date-wrapper .material-symbols-outlined { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #5f6368; font-size: 1.2rem; pointer-events: none; }
+        .btn-remove-ms { background: none; border: none; color: #d93025; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; }
+        .btn-remove-ms:hover { background-color: #fce8e6; }
 
         .color-palette { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
         .color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .color-swatch:hover { transform: scale(1.15); }
         .color-swatch.selected { border-color: var(--text-primary); box-shadow: 0 0 0 3px #fff inset; transform: scale(1.1); }
-        .custom-color-picker { width: 32px; height: 32px; border: none; cursor: pointer; padding: 0; background: none; border-radius: 50%; overflow: hidden; }
-
-        .alert-box { background-color: #f8f9fa; border: 1px solid #e8eaed; padding: 16px; border-radius: 8px; margin-top: 8px; }
-        .toggle-group { display: flex; align-items: center; gap: 10px; font-weight: 500; color: var(--text-primary); }
-        .help-text { font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; margin-left: 28px; line-height: 1.5; }
 
         .btn { padding: 10px 20px; border-radius: 6px; border: none; font-weight: 500; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s; }
         .btn-text { background: none; color: var(--text-secondary); }
@@ -162,11 +171,10 @@
         .center-alert-modal { background-color: var(--surface); border-radius: 12px; width: 460px; max-width: 90%; padding: 32px; box-shadow: 0px 24px 48px rgba(0,0,0,0.2); text-align: left; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 16px; }
         @keyframes popIn { 0% { transform: translateY(20px) scale(0.95); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
         .center-alert-title { margin: 0; color: var(--primary); font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #e8f0fe; padding-bottom: 16px;}
-        .center-alert-subtitle { font-size: 1rem; color: var(--text-primary); margin-bottom: 4px; font-weight: 500;}
         .alert-item-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 8px; margin-top: 8px;}
         .alert-item { background-color: #fff; border: 1px solid #e0e0e0; border-left: 4px solid var(--primary); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .alert-item-name { font-weight: 500; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 75%; font-size: 0.95rem; }
-        .alert-item-dday { background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; }
+        .alert-item-name { font-weight: 500; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 75%; font-size: 0.95rem; line-height: 1.4; }
+        .alert-item-dday { background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
         .alert-item-dday.urgent { background-color: #fce8e6; color: #c5221f; border-color: #f8d8d8; }
 
         ::-webkit-scrollbar { width: 8px; }
@@ -176,16 +184,15 @@
         .main-content ::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
         .main-content ::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
         
-        /* 로딩 스피너 (DB연동용) */
-        #loadingSpinner { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; color: white; font-size: 1.2rem; }
+        #loadingSpinner { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; color: white; font-size: 1.2rem; font-weight: 500; }
     </style>
 </head>
 <body>
-    <div id="loadingSpinner">데이터를 불러오는 중입니다...</div>
+    <div id="loadingSpinner">데이터를 동기화 중입니다...</div>
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <img src="icon.png" alt="SNU AI LAB">
+            <img src="11.png" alt="SNU AI LAB">
         </div>
         
         <div class="status-summary">
@@ -203,7 +210,7 @@
         <div class="select-all-wrap">
             <label style="display:flex; align-items:center; cursor:pointer; font-weight:500; font-size:0.9rem;">
                 <input type="checkbox" id="selectAllCheckbox" checked onchange="toggleSelectAll(this.checked)">
-                목록 전체 선택/해제
+                프로젝트 전체 보기
             </label>
         </div>
 
@@ -220,7 +227,7 @@
                 </div>
                 <div class="nav-group">
                     <button class="icon-btn" onclick="changeMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
-                    <span class="current-date-text" style="font-weight: 500;" id="currentMonthDisplay">3월</span>
+                    <span class="current-date-text" style="font-weight: 700;" id="currentMonthDisplay">3월</span>
                     <button class="icon-btn" onclick="changeMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
                 </div>
                 <button class="btn-outlined" onclick="goToday()">오늘</button>
@@ -245,20 +252,14 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="projectId">
+                
                 <div class="input-group">
-                    <label>프로젝트명</label>
-                    <input type="text" id="projectName" placeholder="진행할 프로젝트의 이름을 입력하세요" required autocomplete="off">
+                    <label>프로젝트 그룹명</label>
+                    <input type="text" id="projectName" placeholder="예: A사 스마트팩토리 AI 비전 솔루션 구축" required autocomplete="off" style="font-weight: 700; font-size: 1.05rem;">
                 </div>
-                <div class="input-group" style="margin-top: 4px;">
-                    <label>진행 기간 (시작일 ~ 종료일)</label>
-                    <div style="display: flex; align-items: center; position: relative;">
-                        <span class="material-symbols-outlined" style="position: absolute; left: 12px; color: #5f6368; pointer-events: none;">calendar_month</span>
-                        <input type="text" id="projectDateRange" placeholder="날짜를 지정해주세요" required style="padding-left: 44px; width: 100%; box-sizing: border-box; cursor: pointer;">
-                    </div>
-                </div>
-                <div class="dday-display" id="modalDdayDisplay"></div>
+                
                 <div class="input-group" style="margin-top: 8px;">
-                    <label>캘린더 표기 색상</label>
+                    <label>캘린더 표기 색상 (프로젝트 고유 컬러)</label>
                     <div class="color-palette" id="colorPalette">
                         <div class="color-swatch" style="background-color: #d93025;" onclick="selectColor('#d93025')"></div>
                         <div class="color-swatch" style="background-color: #f29900;" onclick="selectColor('#f29900')"></div>
@@ -267,25 +268,32 @@
                         <div class="color-swatch selected" style="background-color: #1a73e8;" onclick="selectColor('#1a73e8')"></div>
                         <div class="color-swatch" style="background-color: #3f51b5;" onclick="selectColor('#3f51b5')"></div>
                         <div class="color-swatch" style="background-color: #8e24aa;" onclick="selectColor('#8e24aa')"></div>
-                        <input type="color" id="projectColor" class="custom-color-picker" value="#1a73e8" onchange="selectColor(this.value)">
+                        <input type="color" id="projectColor" style="display:none;" value="#1a73e8">
                     </div>
                 </div>
-                <div class="input-group" style="margin-top: 8px;">
-                    <label>상세 메모 (선택)</label>
-                    <textarea id="projectMemo" placeholder="이슈사항, 담당자 등 주요 메모를 기록하세요"></textarea>
+
+                <div class="input-group" style="margin-top: 12px; background-color: #fff; border: 1px solid #e0e0e0; padding: 16px; border-radius: 8px;">
+                    <label style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; margin-bottom: 12px;">
+                        <span>부서별 세부 일정 (마일스톤)</span>
+                    </label>
+                    
+                    <div id="milestoneContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                        </div>
+                    
+                    <button type="button" class="btn-outlined" style="margin-top: 12px; width: 100%; height: 40px; border-style: dashed;" onclick="addMilestoneRow()">
+                        + 세부 일정 추가
+                    </button>
                 </div>
-                <div class="alert-box">
-                    <div class="toggle-group">
-                        <input type="checkbox" id="projectAlert" checked style="width:18px; height:18px; cursor:pointer; accent-color: var(--primary);">
-                        <label for="projectAlert" style="cursor:pointer;">마감 3일 전 점검 알림 활성화</label>
-                    </div>
-                    <div class="help-text">대시보드 접속 시 마감 기한이 임박한 일정을 화면 중앙에 팝업으로 알려드립니다.</div>
+
+                <div class="input-group" style="margin-top: 4px;">
+                    <label>기타 공유 메모</label>
+                    <textarea id="projectMemo" placeholder="이슈사항, 담당자 등 전체 공유가 필요한 메모를 기록하세요"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-error" id="deleteBtn" style="display: none;" onclick="deleteProject()">삭제</button>
+                <button class="btn btn-error" id="deleteBtn" style="display: none;" onclick="deleteProject()">프로젝트 삭제</button>
                 <button class="btn btn-text" onclick="closeModal()">취소</button>
-                <button class="btn btn-contained" onclick="saveProject()">저장하기</button>
+                <button class="btn btn-contained" onclick="saveProject()">저장 및 공유</button>
             </div>
         </div>
     </div>
@@ -293,8 +301,8 @@
     <div class="center-alert-overlay" id="deadlineAlertModal">
         <div class="center-alert-modal">
             <h2 class="center-alert-title"><span class="material-symbols-outlined" style="font-size: 1.8rem;">fact_check</span> 마감 일정 점검</h2>
-            <div class="center-alert-subtitle">마감 기한이 임박한 프로젝트가 있습니다.</div>
-            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">원활한 마무리를 위해 진행 상태를 한 번 더 확인해 주세요.</div>
+            <div style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 4px; font-weight: 500;">마감 기한이 3일 이내로 임박한 세부 일정이 있습니다.</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">이해관계자 간의 원활한 조율을 위해 상태를 확인해 주세요.</div>
             <div class="alert-item-list" id="deadlineAlertContent"></div>
             <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
                 <button class="btn btn-contained" style="padding: 12px 28px;" onclick="closeDeadlineAlert()">확인 완료</button>
@@ -304,14 +312,12 @@
 
     <script>
         // ==========================================
-        // 1. Firebase 백엔드 설정 영역 (선택사항)
+        // Firebase 설정 (비워두면 로컬 모드로 완벽 작동)
         // ==========================================
-        // 팀원들과 데이터를 공유하려면 아래 config 값을 채워넣으세요. (아래 가이드 참고)
-        // 비워두면 자동으로 기존처럼 '로컬(개인PC) 저장 모드'로 작동합니다.
         const firebaseConfig = {
-            apiKey: "AIzaSyCTuaHm_OV3f0RTGzLOpfpsuYrfS1aMW8A",
-            authDomain: "snuai-pms.firebaseapp.com",
-            projectId: "snuai-pms"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID"
         };
         
         const isBackendEnabled = firebaseConfig.apiKey !== "YOUR_API_KEY";
@@ -322,7 +328,7 @@
         }
 
         // ==========================================
-        // 2. 기본 상태 변수
+        // 기본 상태
         // ==========================================
         const holidays2026 = { "2026-01-01": "신정", "2026-02-16": "설연휴", "2026-02-17": "설날", "2026-02-18": "설연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-06": "현충일", "2026-08-15": "광복절", "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴", "2026-10-03": "개천절", "2026-10-09": "한글날", "2026-12-25": "기독탄신일" };
         let currentDate = new Date();
@@ -331,11 +337,10 @@
         
         let projects = [];
         let filterState = {};
-        let activeStatusFilter = 'all'; // 상태 필터 전역 변수 ('all', '예정', '진행중', '완료')
-        let fpInstance;
+        let activeStatusFilter = 'all';
 
         // ==========================================
-        // 3. 백엔드(DB) 통신 함수
+        // 데이터 통신
         // ==========================================
         async function loadData() {
             if (isBackendEnabled) {
@@ -343,16 +348,23 @@
                 try {
                     const snapshot = await db.collection("projects").get();
                     projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                } catch (e) {
-                    console.error("Firebase 로드 에러:", e);
-                    alert("데이터베이스 연결에 실패했습니다.");
-                }
+                } catch (e) { console.error(e); alert("데이터베이스 연결 실패"); }
                 document.getElementById('loadingSpinner').style.display = 'none';
             } else {
-                projects = JSON.parse(localStorage.getItem('pm_projects')) || [];
+                projects = JSON.parse(localStorage.getItem('pm_projects_v2')) || [];
             }
             
-            projects.forEach(p => filterState[p.id] = true);
+            // 구버전 데이터 마이그레이션 (단일 일정을 마일스톤 배열로 변환)
+            projects.forEach(p => {
+                if (!p.milestones) {
+                    p.milestones = [{
+                        id: 'ms_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                        dept: '공통', title: '프로젝트 진행', start: p.start, end: p.end
+                    }];
+                }
+                filterState[p.id] = true;
+            });
+            
             renderSidebar();
             renderCalendar();
             checkDeadlines();
@@ -362,21 +374,16 @@
             if (isBackendEnabled) {
                 if(typeof projectData.id === 'number') projectData.id = projectData.id.toString();
                 await db.collection("projects").doc(projectData.id).set(projectData);
-            } else {
-                localStorage.setItem('pm_projects', JSON.stringify(projects));
-            }
+            } else { localStorage.setItem('pm_projects_v2', JSON.stringify(projects)); }
         }
 
         async function deleteProjectFromDB(id) {
-            if (isBackendEnabled) {
-                await db.collection("projects").doc(id.toString()).delete();
-            } else {
-                localStorage.setItem('pm_projects', JSON.stringify(projects));
-            }
+            if (isBackendEnabled) { await db.collection("projects").doc(id.toString()).delete(); } 
+            else { localStorage.setItem('pm_projects_v2', JSON.stringify(projects)); }
         }
 
         // ==========================================
-        // 4. 유틸리티 함수
+        // 유틸리티
         // ==========================================
         function formatDateStr(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
         
@@ -393,45 +400,33 @@
             const diffDays = Math.ceil((end - todayDateObj) / (1000 * 60 * 60 * 24));
             if (diffDays > 0) return `D-${diffDays}`;
             if (diffDays === 0) return `D-Day`;
-            return `D+${Math.abs(diffDays)} (마감됨)`;
+            return `마감됨`;
         }
 
         // ==========================================
-        // 5. 렌더링 & UI 상호작용
+        // 렌더링 및 로직
         // ==========================================
-        function init() {
-            fpInstance = flatpickr("#projectDateRange", { mode: "range", locale: "ko", dateFormat: "Y-m-d", showMonths: 1, onChange: (dates) => calculateModalDday(dates) });
-            loadData();
-        }
+        function init() { loadData(); }
 
         function changeYear(delta) { currentDate.setFullYear(currentDate.getFullYear() + delta); renderCalendar(); }
         function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
         function goToday() { currentDate = new Date(); renderCalendar(); }
 
-        // [추가됨] 상태 필터링 클릭 함수
         function filterByStatus(statusName) {
-            // 클릭 해제 시 'all'로 돌아감
             if (activeStatusFilter === statusName) {
                 activeStatusFilter = 'all';
                 document.querySelectorAll('.status-item').forEach(el => el.classList.remove('active'));
             } else {
                 activeStatusFilter = statusName;
                 document.querySelectorAll('.status-item').forEach(el => el.classList.remove('active'));
-                
-                // 클릭한 요소 활성화 효과
                 if(statusName === '예정') document.getElementById('filterTodo').classList.add('active');
                 if(statusName === '진행중') document.getElementById('filterDoing').classList.add('active');
                 if(statusName === '완료') document.getElementById('filterDone').classList.add('active');
             }
 
-            // 필터 로직 적용 (선택한 상태에 해당하는 프로젝트만 true)
             projects.forEach(p => {
                 const pStatus = getProjectStatus(p.start, p.end).text;
-                if (activeStatusFilter === 'all') {
-                    filterState[p.id] = true;
-                } else {
-                    filterState[p.id] = (pStatus === activeStatusFilter);
-                }
+                filterState[p.id] = (activeStatusFilter === 'all') ? true : (pStatus === activeStatusFilter);
             });
             
             document.getElementById('selectAllCheckbox').checked = (activeStatusFilter === 'all' && projects.length > 0);
@@ -466,20 +461,31 @@
                 if (dateStr === todayStr) cell.classList.add('today');
                 if (dayOfWeek === 0) cell.classList.add('sunday');
                 if (dayOfWeek === 6) cell.classList.add('saturday');
-                
                 let isHoliday = holidays2026[dateStr];
                 if (isHoliday) cell.classList.add('holiday');
 
                 cell.innerHTML = `<div class="day-header"><div class="day-number">${day}</div>${isHoliday ? `<div class="holiday-text">${isHoliday}</div>` : ''}</div>`;
                 cell.onclick = (e) => { if(e.target === cell || e.target.closest('.day-header')) openModal(null, dateStr, false); };
 
-                const dayProjects = projects.filter(p => filterState[p.id] && dateStr >= p.start && dateStr <= p.end);
-                dayProjects.forEach(p => {
+                // [핵심] 프로젝트 단위가 아니라 '마일스톤' 단위로 캘린더에 표시
+                let cellMilestones = [];
+                projects.filter(p => filterState[p.id]).forEach(p => {
+                    (p.milestones || []).forEach(m => {
+                        if (dateStr >= m.start && dateStr <= m.end) {
+                            cellMilestones.push({ proj: p, ms: m });
+                        }
+                    });
+                });
+
+                cellMilestones.forEach(item => {
                     let bar = document.createElement('div');
                     bar.className = 'project-bar';
-                    bar.style.backgroundColor = p.color;
-                    bar.innerText = p.name;
-                    bar.onclick = (e) => { e.stopPropagation(); openModal(p.id); };
+                    bar.style.backgroundColor = item.proj.color;
+                    bar.title = `${item.proj.name} > [${item.ms.dept}] ${item.ms.title}`; // 마우스 호버 시 전체 정보 표기
+                    
+                    // 부서 태그와 일정을 바에 표기
+                    bar.innerHTML = `<b style="opacity:0.9; margin-right:4px;">[${item.ms.dept}]</b> ${item.ms.title}`;
+                    bar.onclick = (e) => { e.stopPropagation(); openModal(item.proj.id); };
                     cell.appendChild(bar);
                 });
                 daysGrid.appendChild(cell);
@@ -489,20 +495,14 @@
         function renderSidebar() {
             const filterList = document.getElementById('filterList');
             filterList.innerHTML = '';
-            
             let countTodo = 0, countDoing = 0, countDone = 0;
 
-            if(projects.length === 0) {
-                filterList.innerHTML = '<div style="color:var(--sidebar-text-muted); font-size:14px; text-align:center; padding: 20px 0;">등록된 프로젝트가 없습니다.</div>';
-            }
+            if(projects.length === 0) { filterList.innerHTML = '<div style="color:var(--sidebar-text-muted); font-size:14px; text-align:center; padding: 20px 0;">등록된 프로젝트가 없습니다.</div>'; }
 
             projects.sort((a, b) => new Date(a.start) - new Date(b.start)).forEach(p => {
                 const status = getProjectStatus(p.start, p.end);
-                if(status.text === '예정') countTodo++;
-                else if(status.text === '진행중') countDoing++;
-                else if(status.text === '완료') countDone++;
+                if(status.text === '예정') countTodo++; else if(status.text === '진행중') countDoing++; else if(status.text === '완료') countDone++;
 
-                // 필터링된 항목만 목록에 그리기
                 if (!filterState[p.id]) return;
 
                 let item = document.createElement('label');
@@ -511,17 +511,21 @@
                 let checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = filterState[p.id];
-                checkbox.onchange = (e) => {
-                    filterState[p.id] = e.target.checked;
-                    renderCalendar();
-                };
+                checkbox.onchange = (e) => { filterState[p.id] = e.target.checked; renderCalendar(); };
 
                 let infoDiv = document.createElement('div');
                 infoDiv.className = 'project-info';
+                
+                // 마일스톤 개수 요약 표기 추가
+                const msCount = (p.milestones || []).length;
+                
                 infoDiv.innerHTML = `
                     <div class="project-title-row"><div class="project-title"><span class="color-dot" style="background-color: ${p.color};"></span>${p.name}</div><span class="status-badge ${status.class}">${status.text}</span></div>
-                    <div class="project-dates">${p.start} ~ ${p.end}</div>
-                    <div class="project-dday">${getDdayText(p.end)}</div>
+                    <div class="project-dates" style="margin-top:2px;">전체 일정: ${p.start} ~ ${p.end}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                        <span style="font-size:0.75rem; color:var(--sidebar-text-muted);">세부 일정 ${msCount}개</span>
+                        <div class="project-dday">${getDdayText(p.end)}</div>
+                    </div>
                 `;
                 infoDiv.onclick = (e) => { e.preventDefault(); openModal(p.id); };
 
@@ -536,11 +540,10 @@
         }
 
         function toggleSelectAll(isChecked) {
-            activeStatusFilter = 'all'; // 전체 선택 시 필터 리셋
+            activeStatusFilter = 'all'; 
             document.querySelectorAll('.status-item').forEach(el => el.classList.remove('active'));
             projects.forEach(p => { filterState[p.id] = isChecked; });
-            renderSidebar();
-            renderCalendar();
+            renderSidebar(); renderCalendar();
         }
 
         function updateSelectAllCheckbox() {
@@ -548,11 +551,46 @@
             document.getElementById('selectAllCheckbox').checked = allChecked;
         }
 
+        // ==========================================
+        // 동적 마일스톤 행 컨트롤
+        // ==========================================
+        function addMilestoneRow(dept = '사업부', title = '', dateStr = '') {
+            const container = document.getElementById('milestoneContainer');
+            const row = document.createElement('div');
+            row.className = 'milestone-row';
+            
+            row.innerHTML = `
+                <select class="ms-dept">
+                    <option value="사업부" ${dept==='사업부'?'selected':''}>사업부</option>
+                    <option value="R&D" ${dept==='R&D'?'selected':''}>R&D</option>
+                    <option value="전략기획" ${dept==='전략기획'?'selected':''}>전략기획</option>
+                    <option value="고객사" ${dept==='고객사'?'selected':''}>고객사</option>
+                    <option value="공통" ${dept==='공통'?'selected':''}>공통</option>
+                </select>
+                <input type="text" class="ms-title" placeholder="세부 일정명 (예: 고객사 미팅)" value="${title}">
+                <div class="ms-date-wrapper">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    <input type="text" class="ms-date flatpickr-input" placeholder="날짜 지정" value="${dateStr}">
+                </div>
+                <button type="button" class="btn-remove-ms" onclick="this.parentElement.remove()" title="일정 삭제"><span class="material-symbols-outlined" style="font-size: 1.2rem;">delete</span></button>
+            `;
+            container.appendChild(row);
+
+            // 새로 추가된 input에 flatpickr 적용
+            const dateInput = row.querySelector('.ms-date');
+            flatpickr(dateInput, {
+                mode: "range", locale: "ko", dateFormat: "Y-m-d", showMonths: 1,
+                defaultDate: dateStr ? dateStr.split(' to ') : null
+            });
+        }
+
         function openModal(projectId = null, defaultDate = null, isFromButton = false) {
             const modal = document.getElementById('projectModal');
             const deleteBtn = document.getElementById('deleteBtn');
-            const ddayDisplay = document.getElementById('modalDdayDisplay');
+            const container = document.getElementById('milestoneContainer');
             
+            container.innerHTML = ''; // 기존 행 초기화
+
             if (projectId) {
                 const p = projects.find(x => x.id === projectId || x.id === projectId.toString());
                 document.getElementById('modalTitle').innerText = "프로젝트 수정";
@@ -560,12 +598,15 @@
                 
                 document.getElementById('projectId').value = p.id;
                 document.getElementById('projectName').value = p.name;
-                document.getElementById('projectMemo').value = p.memo;
-                document.getElementById('projectAlert').checked = p.alert;
-                
-                fpInstance.setDate([p.start, p.end]);
+                document.getElementById('projectMemo').value = p.memo || '';
                 selectColor(p.color);
-                calculateModalDday(fpInstance.selectedDates);
+                
+                // 마일스톤 렌더링
+                (p.milestones || []).forEach(m => {
+                    const dateVal = m.start === m.end ? m.start : `${m.start} to ${m.end}`;
+                    addMilestoneRow(m.dept, m.title, dateVal);
+                });
+
             } else {
                 document.getElementById('modalTitle').innerText = "새 프로젝트 등록";
                 deleteBtn.style.display = "none";
@@ -573,14 +614,13 @@
                 document.getElementById('projectId').value = '';
                 document.getElementById('projectName').value = '';
                 document.getElementById('projectMemo').value = '';
-                document.getElementById('projectAlert').checked = true;
                 selectColor('#1a73e8'); 
                 
-                if (isFromButton) { fpInstance.clear(); ddayDisplay.innerText = ''; } 
-                else {
+                if (isFromButton) { 
+                    addMilestoneRow(); // 빈 행 1개 추가
+                } else {
                     let targetDate = defaultDate || todayStr;
-                    fpInstance.setDate([targetDate, targetDate]);
-                    calculateModalDday(fpInstance.selectedDates);
+                    addMilestoneRow('사업부', '', targetDate);
                 }
             }
             modal.classList.add('active');
@@ -588,17 +628,6 @@
         }
 
         function closeModal() { document.getElementById('projectModal').classList.remove('active'); }
-
-        function calculateModalDday(selectedDates) {
-            const display = document.getElementById('modalDdayDisplay');
-            if(selectedDates && selectedDates.length > 0) {
-                const start = selectedDates[0];
-                const end = selectedDates.length === 2 ? selectedDates[1] : selectedDates[0];
-                start.setHours(0,0,0,0); end.setHours(0,0,0,0);
-                const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-                display.innerHTML = `<span style="color:var(--text-secondary); font-weight:500;">총 ${duration}일 진행</span> &nbsp;|&nbsp; 마감: ${getDdayText(formatDateStr(end))}`;
-            } else { display.innerText = ''; }
-        }
 
         function selectColor(hexColor) {
             document.getElementById('projectColor').value = hexColor;
@@ -618,69 +647,100 @@
 
         async function saveProject() {
             const id = document.getElementById('projectId').value;
-            const name = document.getElementById('projectName').value;
+            const name = document.getElementById('projectName').value.trim();
             const memo = document.getElementById('projectMemo').value;
             const color = document.getElementById('projectColor').value;
-            const alert = document.getElementById('projectAlert').checked;
 
-            const selectedDates = fpInstance.selectedDates;
-            if(!name) { window.alert("프로젝트명을 입력해주세요."); return; }
-            if(!selectedDates || selectedDates.length === 0) { window.alert("프로젝트 진행 기간(날짜)을 선택해주세요."); return; }
+            if(!name) { window.alert("프로젝트 그룹명을 입력해주세요."); return; }
 
-            const startStr = formatDateStr(selectedDates[0]);
-            const endStr = selectedDates.length === 2 ? formatDateStr(selectedDates[1]) : startStr;
+            // 마일스톤 데이터 수집
+            const milestoneRows = document.querySelectorAll('.milestone-row');
+            if(milestoneRows.length === 0) { window.alert("최소 1개 이상의 세부 일정을 추가해주세요."); return; }
 
-            const projectData = { id: id ? (isBackendEnabled ? id.toString() : parseInt(id)) : (isBackendEnabled ? Date.now().toString() : Date.now()), name, start: startStr, end: endStr, memo, color, alert };
+            let newMilestones = [];
+            let overallStart = "9999-12-31";
+            let overallEnd = "0000-01-01";
+
+            let isValid = true;
+            milestoneRows.forEach((row, index) => {
+                const dept = row.querySelector('.ms-dept').value;
+                const title = row.querySelector('.ms-title').value.trim() || `세부일정 ${index+1}`;
+                const dateVal = row.querySelector('.ms-date').value;
+
+                if (!dateVal) { isValid = false; return; }
+
+                const dates = dateVal.split(' to ');
+                const msStart = dates[0];
+                const msEnd = dates[1] || dates[0];
+
+                if(msStart < overallStart) overallStart = msStart;
+                if(msEnd > overallEnd) overallEnd = msEnd;
+
+                newMilestones.push({
+                    id: 'ms_' + Date.now() + index,
+                    dept: dept,
+                    title: title,
+                    start: msStart,
+                    end: msEnd
+                });
+            });
+
+            if(!isValid) { window.alert("모든 세부 일정의 날짜를 지정해주세요."); return; }
+
+            const projectData = { 
+                id: id ? (isBackendEnabled ? id.toString() : parseInt(id)) : (isBackendEnabled ? Date.now().toString() : Date.now()), 
+                name, 
+                start: overallStart, 
+                end: overallEnd, 
+                memo, 
+                color, 
+                milestones: newMilestones
+            };
 
             if (id) {
                 const index = projects.findIndex(p => p.id === projectData.id || p.id.toString() === projectData.id.toString());
                 projects[index] = projectData;
             } else {
                 projects.push(projectData);
-                // 현재 상태 필터에 맞게 표기
                 if(activeStatusFilter !== 'all') {
-                    const status = getProjectStatus(startStr, endStr).text;
+                    const status = getProjectStatus(overallStart, overallEnd).text;
                     filterState[projectData.id] = (status === activeStatusFilter);
-                } else {
-                    filterState[projectData.id] = true;
-                }
+                } else { filterState[projectData.id] = true; }
             }
 
             await saveProjectToDB(projectData);
-            renderSidebar();
-            renderCalendar();
-            closeModal();
-            // 수정 시 하루 1회 팝업 제한을 초기화하고 싶다면 주석 해제:
-            // localStorage.removeItem('pm_last_alert_date'); 
-            // checkDeadlines();
+            renderSidebar(); renderCalendar(); closeModal();
         }
 
         async function deleteProject() {
             const id = document.getElementById('projectId').value;
-            if(confirm("정말로 이 프로젝트를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
+            if(confirm("정말로 이 프로젝트와 하위 일정을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
                 projects = projects.filter(p => p.id.toString() !== id.toString());
                 delete filterState[id];
                 await deleteProjectFromDB(id);
-                renderSidebar();
-                renderCalendar();
-                closeModal();
+                renderSidebar(); renderCalendar(); closeModal();
             }
         }
 
         function checkDeadlines() {
-            // [개선됨] 하루 한 번만 체크하는 로직
+            // 하루 한 번 체크 로직
             const lastAlertDate = localStorage.getItem('pm_last_alert_date');
-            if (lastAlertDate === todayStr) return; // 오늘 이미 팝업을 띄웠다면 무시
+            if (lastAlertDate === todayStr) return; 
 
             let approaching = [];
             projects.forEach(p => {
-                if(p.alert) {
-                    const end = new Date(p.end); end.setHours(0,0,0,0);
+                (p.milestones || []).forEach(m => {
+                    const end = new Date(m.end); end.setHours(0,0,0,0);
                     const diffDays = Math.ceil((end - todayDateObj) / (1000 * 60 * 60 * 24));
                     if(diffDays >= 0 && diffDays <= 3) {
-                        approaching.push({ name: p.name, ddayText: diffDays === 0 ? 'D-Day' : `D-${diffDays}`, isUrgent: diffDays === 0 });
+                        approaching.push({ 
+                            projName: p.name,
+                            msName: `[${m.dept}] ${m.title}`, 
+                            ddayText: diffDays === 0 ? 'D-Day' : `D-${diffDays}`, 
+                            isUrgent: diffDays === 0 
+                        });
                     }
-                }
+                });
             });
 
             if(approaching.length > 0) {
@@ -691,13 +751,17 @@
                     return valA - valB;
                 });
 
-                contentDiv.innerHTML = approaching.map(p => 
-                    `<div class="alert-item"><div class="alert-item-name">${p.name}</div><div class="alert-item-dday ${p.isUrgent ? 'urgent' : ''}">${p.ddayText}</div></div>`
+                contentDiv.innerHTML = approaching.map(item => 
+                    `<div class="alert-item">
+                        <div class="alert-item-name">
+                            <div style="font-size:0.75rem; color:#1967d2; margin-bottom:2px;">${item.projName}</div>
+                            ${item.msName}
+                        </div>
+                        <div class="alert-item-dday ${item.isUrgent ? 'urgent' : ''}">${item.ddayText}</div>
+                    </div>`
                 ).join('');
                 
                 setTimeout(() => { document.getElementById('deadlineAlertModal').classList.add('show'); }, 600);
-                
-                // 팝업을 띄웠으니 오늘 날짜 기록
                 localStorage.setItem('pm_last_alert_date', todayStr);
             }
         }
