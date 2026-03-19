@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNUAILAB 통합 프로젝트 일정 관리</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ko.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #2b579a; 
+            --primary-hover: #214478;
+            --bg-color: #f4f6f8;
+            --surface: #ffffff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-color: #dadce0;
+            --holiday-color: #d93025;
+            --saturday-color: #1a73e8;
+            
+            --sidebar-bg: #1e2b40; 
+            --sidebar-text: rgba(255, 255, 255, 0.85);
+            --sidebar-text-muted: rgba(255, 255, 255, 0.6);
+            --sidebar-border: rgba(255, 255, 255, 0.1);
+            --sidebar-hover: rgba(255, 255, 255, 0.05);
+
+            --shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-modal: 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12);
+        }
+
+        body { margin: 0; font-family: 'Roboto', -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
+
+        /* 사이드바 */
+        .sidebar { width: 340px; background-color: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border); display: flex; flex-direction: column; z-index: 1000; color: var(--sidebar-text); }
+        .sidebar-header { padding: 30px 24px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--sidebar-border); }
+        .sidebar-header img { max-width: 80%; height: 36px; object-fit: contain; }
+        
+        .status-summary { display: flex; justify-content: space-around; background-color: rgba(0,0,0,0.15); padding: 12px; border-bottom: 1px solid var(--sidebar-border); }
+        .status-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+        .status-item:hover { background-color: rgba(255,255,255,0.05); }
+        .status-item.active { background-color: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status-label { font-size: 0.8rem; font-weight: 500; color: var(--sidebar-text-muted); }
+        .status-count { font-size: 1.3rem; color: #fff; font-weight: 700; letter-spacing: -0.5px; }
+
+        .select-all-wrap { padding: 20px 24px 8px 24px; color: var(--sidebar-text-muted); }
+        .select-all-wrap input[type="checkbox"] { accent-color: #fff; }
+
+        .filter-section { padding: 8px 16px; flex: 1; overflow-y: auto; }
+        .filter-item { display: flex; align-items: flex-start; padding: 14px 12px; border-bottom: 1px solid var(--sidebar-border); cursor: pointer; transition: background-color 0.2s; border-radius: 8px; margin-bottom: 4px; color: var(--sidebar-text); }
+        .filter-item:hover { background-color: var(--sidebar-hover); }
+        .filter-item input[type="checkbox"] { margin-top: 5px; margin-right: 14px; cursor: pointer; transform: scale(1.1); accent-color: #fff; }
+        
+        .project-info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .project-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .project-title { font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.2); }
+        
+        .status-badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 12px; font-weight: 700; letter-spacing: -0.3px; flex-shrink: 0; }
+        .badge-todo { background-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); }
+        .badge-doing { background-color: #e8f0fe; color: #1967d2; }
+        .badge-done { background-color: #e6f4ea; color: #137333; }
+        
+        .project-dates { font-size: 0.8rem; color: var(--sidebar-text-muted); }
+        .project-dday { font-size: 0.8rem; font-weight: 700; color: #ffab91; }
+
+        /* 메인 콘텐츠 */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--surface); position: relative; }
+
+        .calendar-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--border-color); background-color: #fff; flex-wrap: wrap; gap: 12px;}
+        .nav-controls-wrapper { display: flex; align-items: center; gap: 16px; flex-wrap: wrap;}
+        .nav-group { display: flex; align-items: center; border-radius: 8px; padding: 4px; }
+        .nav-group .current-date-text { min-width: 65px; text-align: center; font-size: 1.3rem; font-weight: 400; color: var(--text-primary); margin: 0 10px; letter-spacing: -1px; }
+        
+        .icon-btn { background: none; border: none; cursor: pointer; color: var(--text-secondary); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; flex-shrink: 0;}
+        .icon-btn:hover { background-color: #f1f3f4; color: var(--text-primary); }
+        
+        .btn-outlined { border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); padding: 0 20px; height: 38px; border-radius: 19px; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; }
+        .btn-outlined:hover { background-color: #f8f9fa; color: var(--text-primary); border-color: #b0b0b0; }
+
+        .add-project-btn { background-color: var(--primary); color: white; border: none; padding: 10px 24px; height: 40px; border-radius: 20px; font-size: 0.95rem; font-weight: 500; cursor: pointer; box-shadow: var(--shadow-sm); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;}
+        .add-project-btn:hover { background-color: var(--primary-hover); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+        /* 모바일 햄버거 메뉴 버튼 (기본 숨김) */
+        .mobile-menu-btn { display: none; margin-right: 8px; }
+
+        /* 캘린더 그리드 */
+        .calendar-grid { flex: 1; display: flex; flex-direction: column; padding: 0 32px 32px 32px; overflow: auto; }
+        .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 500; color: var(--text-secondary); padding: 18px 0 10px 0; font-size: 0.85rem; letter-spacing: 0.5px; min-width: 700px; }
+        .weekdays div:first-child { color: var(--holiday-color); }
+        .weekdays div:last-child { color: var(--saturday-color); }
+
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(120px, 1fr); border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); flex: 1; border-radius: 8px 8px 0 0; min-width: 700px; }
+        
+        .day-cell { background-color: var(--surface); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 8px; display: flex; flex-direction: column; cursor: pointer; transition: background-color 0.1s; overflow-y: auto;}
+        .day-cell:hover { background-color: #f8fafd; }
+        .day-cell.other-month { background-color: #f8f9fa; color: #bdbdbd; pointer-events: none; }
+        
+        .day-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 6px; pointer-events: none; }
+        .day-number { font-size: 0.9rem; font-weight: 500; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-primary); }
+        .holiday-text { font-size: 0.7rem; color: var(--holiday-color); margin-top: 2px; font-weight: 500; text-align: center; line-height: 1.1;}
+        
+        .day-cell.today .day-number { background-color: var(--primary); color: white !important; font-weight: 700; }
+        .day-cell.sunday .day-number { color: var(--holiday-color); }
+        .day-cell.saturday .day-number { color: var(--saturday-color); }
+        .day-cell.holiday .day-number { color: var(--holiday-color); }
+
+        .project-bar { 
+            min-height: 24px; border-radius: 4px; margin-bottom: 4px; cursor: pointer; 
+            display: flex; align-items: center; padding: 4px 8px; color: white; 
+            font-size: 0.75rem; font-weight: 500; line-height: 1.3;
+            border: 1px solid rgba(0,0,0,0.08); transition: filter 0.2s; 
+            word-break: break-all;
+        }
+        .project-bar:hover { filter: brightness(0.85); box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; transform: scale(1.02);}
+
+        /* 모달 팝업 */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(10,15,30,0.6); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content { background-color: var(--surface); border-radius: 12px; width: 650px; max-width: 95%; box-shadow: var(--shadow-modal); display: flex; flex-direction: column; overflow: hidden; max-height: 90vh;}
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: #f8fafd; }
+        .modal-header h2 { margin: 0; font-size: 1.25rem; font-weight: 500; color: var(--text-primary); }
+        .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background-color: #fafafa; }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
+        
+        .input-group input[type="text"], .input-group textarea, .input-group select { 
+            padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; 
+            font-family: 'Roboto', sans-serif; font-size: 0.95rem; background-color: #fff; 
+        }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+        .input-group textarea { resize: vertical; min-height: 60px; }
+
+        .milestone-row { display: flex; gap: 8px; align-items: center; background-color: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        .ms-dept { width: 110px; flex-shrink: 0; }
+        .ms-title { flex: 1; }
+        .ms-date-wrapper { position: relative; width: 200px; flex-shrink: 0; }
+        .ms-date { width: 100%; padding-left: 32px !important; box-sizing: border-box; cursor: pointer; }
+        .ms-date-wrapper .material-symbols-outlined { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #5f6368; font-size: 1.2rem; pointer-events: none; }
+        .btn-remove-ms { background: none; border: none; color: #d93025; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; }
+        .btn-remove-ms:hover { background-color: #fce8e6; }
+
+        .color-palette { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+        .color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .color-swatch:hover { transform: scale(1.15); }
+        .color-swatch.selected { border-color: var(--text-primary); box-shadow: 0 0 0 3px #fff inset; transform: scale(1.1); }
+
+        .btn { padding: 10px 20px; border-radius: 6px; border: none; font-weight: 500; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s; }
+        .btn-text { background: none; color: var(--text-secondary); }
+        .btn-text:hover { background-color: #f1f3f4; color: var(--text-primary); }
+        .btn-contained { background-color: var(--primary); color: white; }
+        .btn-contained:hover { background-color: var(--primary-hover); }
+        .btn-error { color: var(--holiday-color); background: none; margin-right: auto; }
+        .btn-error:hover { background-color: #fce8e6; }
+
+        /* 모바일 사이드바 배경 오버레이 */
+        .sidebar-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 999;
+        }
+
+        /* 중앙 알림 팝업 */
+        .center-alert-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(10,15,30,0.6); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .center-alert-overlay.show { display: flex; }
+        .center-alert-modal { background-color: var(--surface); border-radius: 12px; width: 460px; max-width: 90%; padding: 32px; box-shadow: 0px 24px 48px rgba(0,0,0,0.2); text-align: left; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; gap: 16px; }
+        @keyframes popIn { 0% { transform: translateY(20px) scale(0.95); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        .center-alert-title { margin: 0; color: var(--primary); font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #e8f0fe; padding-bottom: 16px;}
+        .alert-item-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 8px; margin-top: 8px;}
+        .alert-item { background-color: #fff; border: 1px solid #e0e0e0; border-left: 4px solid var(--primary); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); gap: 10px;}
+        .alert-item-name { font-weight: 500; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 75%; font-size: 0.95rem; line-height: 1.4; }
+        .alert-item-dday { background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+        .alert-item-dday.urgent { background-color: #fce8e6; color: #c5221f; border-color: #f8d8d8; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .sidebar ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        .sidebar ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+        .main-content ::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
+        .main-content ::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
+        
+        #loadingSpinner { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; color: white; font-size: 1.2rem; font-weight: 500; }
+
+        /* =========================================
+           미디어 쿼리 (반응형 모바일 & 태블릿)
+           ========================================= */
+        @media (max-width: 1024px) {
+            .sidebar { width: 280px; }
+            .calendar-grid { padding: 0 16px 16px 16px; }
+        }
+
+        @media (max-width: 768px) {
+            /* 헤더 버튼 및 레이아웃 재배치 */
+            .calendar-header { padding: 16px; align-items: flex-start; flex-direction: column; }
+            .nav-controls-wrapper { width: 100%; justify-content: space-between; }
+            .mobile-menu-btn { display: flex; }
+            .add-project-btn { width: 100%; margin-top: 4px; }
+
+            /* 오프캔버스 사이드바 (숨김 처리) */
+            .sidebar {
+                position: fixed; top: 0; left: -100%; height: 100vh;
+                transition: left 0.3s ease; width: 80%; max-width: 320px; box-shadow: 2px 0 12px rgba(0,0,0,0.3);
+            }
+            .sidebar.open { left: 0; }
+            .sidebar-overlay.open { display: block; }
+
+            /* 캘린더 그리드 모바일 패딩 조정 */
+            .calendar-grid { padding: 0 12px 12px 12px; }
+
+            /* 모달 내 폼 세로 정렬 (터치 최적화) */
+            .milestone-row { flex-direction: column; align-items: stretch; gap: 10px; }
+            .ms-dept, .ms-date-wrapper { width: 100%; }
+            .btn-remove-ms { align-self: flex-end; background-color: #fce8e6; width: 100%; margin-top: 4px;}
+
+            .modal-content { max-height: 95vh; width: 95%; margin: 10px; }
+            .modal-body { padding: 16px; }
+            .color-palette { gap: 8px; }
+            .color-swatch { width: 26px; height: 26px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingSpinner">데이터를 동기화 중입니다...</div>
+
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="icon.png" alt="SNU AI LAB">
+        </div>
+        
+        <div class="status-summary">
+            <div class="status-item" id="filterTodo" onclick="filterByStatus('예정')">
+                <span class="status-label">예정</span><span class="status-count" id="countTodo">0</span>
+            </div>
+            <div class="status-item" id="filterDoing" onclick="filterByStatus('진행중')">
+                <span class="status-label">진행중</span><span class="status-count" id="countDoing">0</span>
+            </div>
+            <div class="status-item" id="filterDone" onclick="filterByStatus('완료')">
+                <span class="status-label">완료</span><span class="status-count" id="countDone">0</span>
+            </div>
+        </div>
+
+        <div class="select-all-wrap">
+            <label style="display:flex; align-items:center; cursor:pointer; font-weight:500; font-size:0.9rem;">
+                <input type="checkbox" id="selectAllCheckbox" checked onchange="toggleSelectAll(this.checked)">
+                프로젝트 전체 보기
+            </label>
+        </div>
+
+        <div class="filter-section" id="filterList"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="calendar-header">
+            <div class="nav-controls-wrapper">
+                <button class="icon-btn mobile-menu-btn" onclick="toggleSidebar()">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                
+                <div class="nav-group">
+                    <button class="icon-btn" onclick="changeYear(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
+                    <span class="current-date-text" id="currentYearDisplay">2026년</span>
+                    <button class="icon-btn" onclick="changeYear(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+                </div>
+                <div class="nav-group">
+                    <button class="icon-btn" onclick="changeMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
+                    <span class="current-date-text" style="font-weight: 700;" id="currentMonthDisplay">3월</span>
+                    <button class="icon-btn" onclick="changeMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+                </div>
+                <button class="btn-outlined" onclick="goToday()">오늘</button>
+            </div>
+            
+            <button class="add-project-btn" onclick="openModal(null, null, true)">
+                <span class="material-symbols-outlined">add</span>새 프로젝트 등록
+            </button>
+        </div>
+        
+        <div class="calendar-grid">
+            <div class="weekdays"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
+            <div class="days-grid" id="daysGrid"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">새 프로젝트 등록</h2>
+                <button class="icon-btn" onclick="closeModal()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="projectId">
+                
+                <div class="input-group">
+                    <label>프로젝트 그룹명</label>
+                    <input type="text" id="projectName" placeholder="예: A사 스마트팩토리 AI 비전 솔루션 구축" required autocomplete="off" style="font-weight: 700; font-size: 1.05rem;">
+                </div>
+                
+                <div class="input-group" style="margin-top: 8px;">
+                    <label>캘린더 표기 색상 (프로젝트 고유 컬러)</label>
+                    <div class="color-palette" id="colorPalette">
+                        <div class="color-swatch" style="background-color: #d93025;" onclick="selectColor('#d93025')"></div>
+                        <div class="color-swatch" style="background-color: #f29900;" onclick="selectColor('#f29900')"></div>
+                        <div class="color-swatch" style="background-color: #fbbc04;" onclick="selectColor('#fbbc04')"></div>
+                        <div class="color-swatch" style="background-color: #188038;" onclick="selectColor('#188038')"></div>
+                        <div class="color-swatch selected" style="background-color: #1a73e8;" onclick="selectColor('#1a73e8')"></div>
+                        <div class="color-swatch" style="background-color: #3f51b5;" onclick="selectColor('#3f51b5')"></div>
+                        <div class="color-swatch" style="background-color: #8e24aa;" onclick="selectColor('#8e24aa')"></div>
+                        <input type="color" id="projectColor" style="display:none;" value="#1a73e8">
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 12px; background-color: #fff; border: 1px solid #e0e0e0; padding: 16px; border-radius: 8px;">
+                    <label style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f3f4; padding-bottom: 10px; margin-bottom: 12px;">
+                        <span>부서별 세부 일정 (마일스톤)</span>
+                    </label>
+                    
+                    <div id="milestoneContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                        </div>
+                    
+                    <button type="button" class="btn-outlined" style="margin-top: 12px; width: 100%; height: 40px; border-style: dashed;" onclick="addMilestoneRow()">
+                        + 세부 일정 추가
+                    </button>
+                </div>
+
+                <div class="input-group" style="margin-top: 4px;">
+                    <label>기타 공유 메모</label>
+                    <textarea id="projectMemo" placeholder="이슈사항, 담당자 등 전체 공유가 필요한 메모를 기록하세요"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-wrap: wrap; justify-content: space-between;">
+                <button class="btn btn-error" id="deleteBtn" style="display: none;" onclick="deleteProject()">프로젝트 삭제</button>
+                <div style="display: flex; gap: 10px; margin-left: auto;">
+                    <button class="btn btn-text" onclick="closeModal()">취소</button>
+                    <button class="btn btn-contained" onclick="saveProject()">저장 및 공유</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="center-alert-overlay" id="deadlineAlertModal">
+        <div class="center-alert-modal">
+            <h2 class="center-alert-title"><span class="material-symbols-outlined" style="font-size: 1.8rem;">fact_check</span> 마감 일정 점검</h2>
+            <div style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 4px; font-weight: 500;">마감 기한이 3일 이내로 임박한 세부 일정이 있습니다.</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">이해관계자 간의 원활한 조율을 위해 상태를 확인해 주세요.</div>
+            <div class="alert-item-list" id="deadlineAlertContent"></div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+                <button class="btn btn-contained" style="padding: 12px 28px; width: 100%;" onclick="closeDeadlineAlert()">확인 완료</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // Firebase 설정 (비워두면 로컬 모드로 완벽 작동)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID"
+        };
+        
+        const isBackendEnabled = firebaseConfig.apiKey !== "YOUR_API_KEY";
+        let db;
+        if (isBackendEnabled) {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        }
+
+        // ==========================================
+        // 기본 상태
+        // ==========================================
+        const holidays2026 = { "2026-01-01": "신정", "2026-02-16": "설연휴", "2026-02-17": "설날", "2026-02-18": "설연휴", "2026-03-01": "삼일절", "2026-03-02": "대체공휴일", "2026-05-05": "어린이날", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-06": "현충일", "2026-08-15": "광복절", "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴", "2026-10-03": "개천절", "2026-10-09": "한글날", "2026-12-25": "기독탄신일" };
+        let currentDate = new Date();
+        let todayDateObj = new Date(); todayDateObj.setHours(0,0,0,0);
+        let todayStr = formatDateStr(todayDateObj);
+        
+        let projects = [];
+        let filterState = {};
+        let activeStatusFilter = 'all';
+
+        // ==========================================
+        // UI 컨트롤 추가 (사이드바 토글)
+        // ==========================================
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.querySelector('.sidebar-overlay').classList.toggle('open');
+        }
+
+        // ==========================================
+        // 데이터 통신
+        // ==========================================
+        async function loadData() {
+            if (isBackendEnabled) {
+                document.getElementById('loadingSpinner').style.display = 'flex';
+                try {
+                    const snapshot = await db.collection("projects").get();
+                    projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (e) { console.error(e); alert("데이터베이스 연결 실패"); }
+                document.getElementById('loadingSpinner').style.display = 'none';
+            } else {
+                projects = JSON.parse(localStorage.getItem('pm_projects_v2')) || [];
+            }
+            
+            projects.forEach(p => {
+                if (!p.milestones) {
+                    p.milestones = [{ id: 'ms_' + Date.now(), dept: '공통', title: '프로젝트 진행', start: p.start, end: p.end }];
+                }
+                filterState[p.id] = true;
+            });
+            
+            renderSidebar();
+            renderCalendar();
+            checkDeadlines();
+        }
+
+        async function saveProjectToDB(projectData) {
+            if (isBackendEnabled) {
+                if(typeof projectData.id === 'number') projectData.id = projectData.id.toString();
+                await db.collection("projects").doc(projectData.id).set(projectData);
+            } else { localStorage.setItem('pm_projects_v2', JSON.stringify(projects)); }
+        }
+
+        async function deleteProjectFromDB(id) {
+            if (isBackendEnabled) { await db.collection("projects").doc(id.toString()).delete(); } 
+            else { localStorage.setItem('pm_projects_v2', JSON.stringify(projects)); }
+        }
+
+        // ==========================================
+        // 유틸리티
+        // ==========================================
+        function formatDateStr(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+        
+        function getProjectStatus(startStr, endStr) {
+            const start = new Date(startStr); start.setHours(0,0,0,0);
+            const end = new Date(endStr); end.setHours(0,0,0,0);
+            if (todayDateObj < start) return { text: '예정', class: 'badge-todo' };
+            if (todayDateObj > end) return { text: '완료', class: 'badge-done' };
+            return { text: '진행중', class: 'badge-doing' };
+        }
+
+        function getDdayText(endStr) {
+            const end = new Date(endStr); end.setHours(0,0,0,0);
+            const diffDays = Math.ceil((end - todayDateObj) / (1000 * 60 * 60 * 24));
+            if (diffDays > 0) return `D-${diffDays}`;
+            if (diffDays === 0) return `D-Day`;
+            return `마감됨`;
+        }
+
+        // ==========================================
+        // 렌더링 및 로직
+        // ==========================================
+        function init() { loadData(); }
+
+        function changeYear(delta) { currentDate.setFullYear(currentDate.getFullYear() + delta); renderCalendar(); }
+        function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); renderCalendar(); }
+        function goToday() { currentDate = new Date(); renderCalendar(); }
+
+        function filterByStatus(statusName) {
+            if (activeStatusFilter === statusName) {
+                activeStatusFilter = 'all';
+                document.querySelectorAll('.status-item').forEach(el => el.classList.remove('active'));
+            } else {
+                activeStatusFilter = statusName;
+                document.querySelectorAll('.status-item').forEach(el => el.classList.remove('active'));
+                if(statusName === '예정') document.getElementById('filterTodo').classList.add('active');
+                if(statusName === '진행중') document.getElementById('filterDoing').classList.add('active');
+                if(statusName === '완료') document.getElementById('filterDone').classList.add('active');
+            }
+
+            projects.forEach(p => {
+                const pStatus = getProjectStatus(p.start, p.end).text;
+                filterState[p.id] = (activeStatusFilter === 'all') ? true : (pStatus === activeStatusFilter);
+            });
+            
+            document.getElementById('selectAllCheckbox').checked = (activeStatusFilter === 'all' && projects.length > 0);
+            renderSidebar();
+            renderCalendar();
+            
+            // 모바일에서 필터 누르면 사이드바 닫아주기 (편의성)
+            if(window.innerWidth <= 768) toggleSidebar();
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('currentYearDisplay').innerText = `${year}년`;
+            document.getElementById('currentMonthDisplay').innerText = `${month + 1}월`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysGrid = document.getElementById('daysGrid');
+            daysGrid.innerHTML = ''; 
+
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                let emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell other-month';
+                daysGrid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateObj = new Date(year, month, day);
+                const dateStr = formatDateStr(dateObj);
+                const dayOfWeek = dateObj.getDay();
+
+                let cell = document.createElement('div');
+                cell.className = 'day-cell';
+                if (dateStr === todayStr) cell.classList.add('today');
+                if (dayOfWeek === 0) cell.classList.add('sunday');
+                if (dayOfWeek === 6) cell.classList.add('saturday');
+                let isHoliday = holidays2026[dateStr];
+                if (isHoliday) cell.classList.add('holiday');
+
+                cell.innerHTML = `<div class="day-header"><div class="day-number">${day}</div>${isHoliday ? `<div class="holiday-text">${isHoliday}</div>` : ''}</div>`;
+                cell.onclick = (e) => { if(e.target === cell || e.target.closest('.day-header')) openModal(null, dateStr, false); };
+
+                let cellMilestones = [];
+                projects.filter(p => filterState[p.id]).forEach(p => {
+                    (p.milestones || []).forEach(m => {
+                        if (dateStr >= m.start && dateStr <= m.end) {
+                            cellMilestones.push({ proj: p, ms: m });
+                        }
+                    });
+                });
+
+                cellMilestones.forEach(item => {
+                    let bar = document.createElement('div');
+                    bar.className = 'project-bar';
+                    bar.style.backgroundColor = item.proj.color;
+                    bar.title = `${item.proj.name} > [${item.ms.dept}] ${item.ms.title}`; 
+                    bar.innerHTML = `<b style="opacity:0.9; margin-right:4px;">[${item.ms.dept}]</b> ${item.ms.title}`;
+                    bar.onclick = (e) => { e.stopPropagation(); openModal(item.proj.id); };
+                    cell.appendChild(bar);
+                });
+                daysGrid.appendChild(cell);
+            }
+        }
+
+        function renderSidebar() {
+            const filterList = document.getElementById('filterList');
+            filterList.innerHTML = '';
+            let countTodo = 0, countDoing = 0, countDone = 0;
+
+            if(projects.length === 0) { filterList.innerHTML = '<div style="color:var(--sidebar-text-muted); font-size:14px; text-align:center; padding: 20px 0;">등록된 프로젝트가 없습니다.</div>'; }
+
+            projects.sort((a, b) => new Date(a.start) - new Date(b.start)).forEach(p => {
+                const status = getProjectStatus(p.start, p.end);
+                if(status.text === '예정') countTodo++; else if(status.text === '진행중') countDoing++; else if(status.text === '완료') countDone++;
+
+                if (!filterState[p.id]) return;
+
+                let item = document.createElement('label');
+                item.className = 'filter-item';
+                
+                let checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = filterState[p.id];
+                checkbox.onchange = (e) => { filterState[p.id] = e.target.checked; renderCalendar(); };
+
+                let infoDiv = document.createElement('div');
+                infoDiv.className = 'project-info';
+                
+                const msCount = (p.milestones || []).length;
+                
+                infoDiv.innerHTML = `
+                    <div class="project-title-row"><div class="project-title"><span class="color-dot" style="background-color: ${p.color};"></span>${p.name}</div><span class="status-badge ${status.class}">${status.text}</span></div>
+                    <div class="project-dates" style="margin-top:2px;">전체 일정: ${p.start} ~ ${p.end}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                        <span style="font-size:0.75rem; color:var(--sidebar-text-muted);">세부 일정 ${msCount}개</span>
+                        <div class="project-dday">${getDdayText(p.end)}</div>
+                    </div>
+                `;
+                infoDiv.onclick = (e) => { e.preventDefault(); openModal(p.id); if(window.innerWidth <= 768) toggleSidebar(); };
+
+                item.appendChild(checkbox);
+                item.appendChild(infoDiv);
+                filterList.appendChild(item);
+            });
+
+            document.getElementById('countTodo').innerText = countTodo;
+            document.getElementById('countDoing').innerText = countDoing;
+            document.getElementById('countDone').innerText = countDone;
+        }
+
+        function toggleSelectAll(isChecked) {
+            activeStatusFilter = 'all'; 
+            document.querySelectorAll('.status-item').forEach(el => el.classList.remove('active'));
+            projects.forEach(p => { filterState[p.id] = isChecked; });
+            renderSidebar(); renderCalendar();
+        }
+
+        function updateSelectAllCheckbox() {
+            const allChecked = projects.length > 0 && projects.every(p => filterState[p.id]);
+            document.getElementById('selectAllCheckbox').checked = allChecked;
+        }
+
+        function addMilestoneRow(dept = '사업부', title = '', dateStr = '') {
+            const container = document.getElementById('milestoneContainer');
+            const row = document.createElement('div');
+            row.className = 'milestone-row';
+            
+            row.innerHTML = `
+                <select class="ms-dept">
+                    <option value="사업부" ${dept==='사업부'?'selected':''}>사업부</option>
+                    <option value="R&D" ${dept==='R&D'?'selected':''}>R&D</option>
+                    <option value="전략기획" ${dept==='전략기획'?'selected':''}>전략기획</option>
+                    <option value="고객사" ${dept==='고객사'?'selected':''}>고객사</option>
+                    <option value="공통" ${dept==='공통'?'selected':''}>공통</option>
+                </select>
+                <input type="text" class="ms-title" placeholder="세부 일정명 (예: 고객사 미팅)" value="${title}">
+                <div class="ms-date-wrapper">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    <input type="text" class="ms-date flatpickr-input" placeholder="날짜 지정" value="${dateStr}" readonly>
+                </div>
+                <button type="button" class="btn-remove-ms" onclick="this.parentElement.remove()" title="일정 삭제"><span class="material-symbols-outlined" style="font-size: 1.2rem;">delete</span></button>
+            `;
+            container.appendChild(row);
+
+            const dateInput = row.querySelector('.ms-date');
+            flatpickr(dateInput, {
+                mode: "range", locale: "ko", dateFormat: "Y-m-d", showMonths: 1,
+                defaultDate: dateStr ? dateStr.split(' to ') : null,
+                disableMobile: "true" // 모바일에서도 Flatpickr 디자인 유지
+            });
+        }
+
+        function openModal(projectId = null, defaultDate = null, isFromButton = false) {
+            const modal = document.getElementById('projectModal');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const container = document.getElementById('milestoneContainer');
+            
+            container.innerHTML = ''; 
+
+            if (projectId) {
+                const p = projects.find(x => x.id === projectId || x.id === projectId.toString());
+                document.getElementById('modalTitle').innerText = "프로젝트 수정";
+                deleteBtn.style.display = "block";
+                
+                document.getElementById('projectId').value = p.id;
+                document.getElementById('projectName').value = p.name;
+                document.getElementById('projectMemo').value = p.memo || '';
+                selectColor(p.color);
+                
+                (p.milestones || []).forEach(m => {
+                    const dateVal = m.start === m.end ? m.start : `${m.start} to ${m.end}`;
+                    addMilestoneRow(m.dept, m.title, dateVal);
+                });
+
+            } else {
+                document.getElementById('modalTitle').innerText = "새 프로젝트 등록";
+                deleteBtn.style.display = "none";
+                
+                document.getElementById('projectId').value = '';
+                document.getElementById('projectName').value = '';
+                document.getElementById('projectMemo').value = '';
+                selectColor('#1a73e8'); 
+                
+                if (isFromButton) { 
+                    addMilestoneRow(); 
+                } else {
+                    let targetDate = defaultDate || todayStr;
+                    addMilestoneRow('사업부', '', targetDate);
+                }
+            }
+            modal.classList.add('active');
+            
+            // 모바일 키보드 자동 팝업 방지 (필요 시 주석 해제)
+            // if(window.innerWidth > 768) { setTimeout(() => { document.getElementById('projectName').focus(); }, 100); }
+        }
+
+        function closeModal() { document.getElementById('projectModal').classList.remove('active'); }
+
+        function selectColor(hexColor) {
+            document.getElementById('projectColor').value = hexColor;
+            const swatches = document.querySelectorAll('.color-swatch');
+            swatches.forEach(sw => sw.classList.remove('selected'));
+            
+            const rgb2hex = (rgb) => {
+                if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
+                let m = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+                if (!m) return null;
+                const hex = (x) => ("0" + parseInt(x).toString(16)).slice(-2);
+                return "#" + hex(m[1]) + hex(m[2]) + hex(m[3]);
+            }
+            const matchingSwatch = Array.from(swatches).find(sw => rgb2hex(sw.style.backgroundColor)?.toLowerCase() === hexColor.toLowerCase());
+            if(matchingSwatch) matchingSwatch.classList.add('selected');
+        }
+
+        async function saveProject() {
+            const id = document.getElementById('projectId').value;
+            const name = document.getElementById('projectName').value.trim();
+            const memo = document.getElementById('projectMemo').value;
+            const color = document.getElementById('projectColor').value;
+
+            if(!name) { window.alert("프로젝트 그룹명을 입력해주세요."); return; }
+
+            const milestoneRows = document.querySelectorAll('.milestone-row');
+            if(milestoneRows.length === 0) { window.alert("최소 1개 이상의 세부 일정을 추가해주세요."); return; }
+
+            let newMilestones = [];
+            let overallStart = "9999-12-31";
+            let overallEnd = "0000-01-01";
+            let isValid = true;
+
+            milestoneRows.forEach((row, index) => {
+                const dept = row.querySelector('.ms-dept').value;
+                const title = row.querySelector('.ms-title').value.trim() || `세부일정 ${index+1}`;
+                const dateVal = row.querySelector('.ms-date').value;
+
+                if (!dateVal) { isValid = false; return; }
+
+                const dates = dateVal.split(' to ');
+                const msStart = dates[0];
+                const msEnd = dates[1] || dates[0];
+
+                if(msStart < overallStart) overallStart = msStart;
+                if(msEnd > overallEnd) overallEnd = msEnd;
+
+                newMilestones.push({
+                    id: 'ms_' + Date.now() + index, dept: dept, title: title, start: msStart, end: msEnd
+                });
+            });
+
+            if(!isValid) { window.alert("모든 세부 일정의 날짜를 지정해주세요."); return; }
+
+            const projectData = { 
+                id: id ? (isBackendEnabled ? id.toString() : parseInt(id)) : (isBackendEnabled ? Date.now().toString() : Date.now()), 
+                name, start: overallStart, end: overallEnd, memo, color, milestones: newMilestones
+            };
+
+            if (id) {
+                const index = projects.findIndex(p => p.id === projectData.id || p.id.toString() === projectData.id.toString());
+                projects[index] = projectData;
+            } else {
+                projects.push(projectData);
+                if(activeStatusFilter !== 'all') {
+                    const status = getProjectStatus(overallStart, overallEnd).text;
+                    filterState[projectData.id] = (status === activeStatusFilter);
+                } else { filterState[projectData.id] = true; }
+            }
+
+            await saveProjectToDB(projectData);
+            renderSidebar(); renderCalendar(); closeModal();
+        }
+
+        async function deleteProject() {
+            const id = document.getElementById('projectId').value;
+            if(confirm("정말로 이 프로젝트와 하위 일정을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
+                projects = projects.filter(p => p.id.toString() !== id.toString());
+                delete filterState[id];
+                await deleteProjectFromDB(id);
+                renderSidebar(); renderCalendar(); closeModal();
+            }
+        }
+
+        function checkDeadlines() {
+            const lastAlertDate = localStorage.getItem('pm_last_alert_date');
+            if (lastAlertDate === todayStr) return; 
+
+            let approaching = [];
+            projects.forEach(p => {
+                (p.milestones || []).forEach(m => {
+                    const end = new Date(m.end); end.setHours(0,0,0,0);
+                    const diffDays = Math.ceil((end - todayDateObj) / (1000 * 60 * 60 * 24));
+                    if(diffDays >= 0 && diffDays <= 3) {
+                        approaching.push({ 
+                            projName: p.name, msName: `[${m.dept}] ${m.title}`, 
+                            ddayText: diffDays === 0 ? 'D-Day' : `D-${diffDays}`, isUrgent: diffDays === 0 
+                        });
+                    }
+                });
+            });
+
+            if(approaching.length > 0) {
+                const contentDiv = document.getElementById('deadlineAlertContent');
+                approaching.sort((a, b) => {
+                    let valA = a.ddayText === 'D-Day' ? 0 : parseInt(a.ddayText.replace('D-', ''));
+                    let valB = b.ddayText === 'D-Day' ? 0 : parseInt(b.ddayText.replace('D-', ''));
+                    return valA - valB;
+                });
+
+                contentDiv.innerHTML = approaching.map(item => 
+                    `<div class="alert-item">
+                        <div class="alert-item-name"><div style="font-size:0.75rem; color:#1967d2; margin-bottom:2px;">${item.projName}</div>${item.msName}</div>
+                        <div class="alert-item-dday ${item.isUrgent ? 'urgent' : ''}">${item.ddayText}</div>
+                    </div>`
+                ).join('');
+                
+                setTimeout(() => { document.getElementById('deadlineAlertModal').classList.add('show'); }, 600);
+                localStorage.setItem('pm_last_alert_date', todayStr);
+            }
+        }
+
+        function closeDeadlineAlert() { document.getElementById('deadlineAlertModal').classList.remove('show'); }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
